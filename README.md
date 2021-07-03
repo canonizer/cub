@@ -3,23 +3,23 @@
 
 CUB provides state-of-the-art, reusable software components for every layer
 of the CUDA programming model:
-- [<b><em>Device-wide primitives</em></b>](https://nvlabs.github.com/cub/group___device_module.html)
+- [<b><em>Device-wide primitives</em></b>](https://nvlabs.github.io/cub/group___device_module.html)
   - Sort, prefix scan, reduction, histogram, etc.
   - Compatible with CUDA dynamic parallelism
-- [<b><em>Block-wide "collective" primitives</em></b>](https://nvlabs.github.com/cub/group___block_module.html)
+- [<b><em>Block-wide "collective" primitives</em></b>](https://nvlabs.github.io/cub/group___block_module.html)
   - I/O, sort, prefix scan, reduction, histogram, etc.
   - Compatible with arbitrary thread block sizes and types
-- [<b><em>Warp-wide "collective" primitives</em></b>](https://nvlabs.github.com/cub/group___warp_module.html)
+- [<b><em>Warp-wide "collective" primitives</em></b>](https://nvlabs.github.io/cub/group___warp_module.html)
   - Warp-wide prefix scan, reduction, etc.
   - Safe and architecture-specific
-- [<b><em>Thread and resource utilities</em></b>](https://nvlabs.github.com/cub/group___thread_module.html)
+- [<b><em>Thread and resource utilities</em></b>](https://nvlabs.github.io/cub/group___util_io.html)
   - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc.
 
-![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
+![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.io/cub/cub_overview.png)
 
 CUB is included in the NVIDIA HPC SDK and the CUDA Toolkit.
 
-We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
+We recommend the [CUB Project Website](http://nvlabs.github.io/cub) for further information and examples.
 
 <br><hr>
 <h3>A Simple Example</h3>
@@ -100,8 +100,11 @@ See the [changelog](CHANGELOG.md) for details about specific releases.
 
 | CUB Release               | Included In                             |
 | ------------------------- | --------------------------------------- |
-| 1.11.0                    |                                         |
-| 1.10.0                    | NVIDIA HPC SDK 20.9                     |
+| 1.13.0                    | NVIDIA HPC SDK 21.7                     |
+| 1.12.1                    | CUDA Toolkit 11.4                       |
+| 1.12.0                    | NVIDIA HPC SDK 21.3                     |
+| 1.11.0                    | CUDA Toolkit 11.3                       |
+| 1.10.0                    | NVIDIA HPC SDK 20.9 & CUDA Toolkit 11.2 |
 | 1.9.10-1                  | NVIDIA HPC SDK 20.7 & CUDA Toolkit 11.1 |
 | 1.9.10                    | NVIDIA HPC SDK 20.5                     |
 | 1.9.9                     | CUDA Toolkit 11.0                       |
@@ -142,23 +145,27 @@ See the [changelog](CHANGELOG.md) for details about specific releases.
 <br><hr>
 <h3>Development Process</h3>
 
+CUB and Thrust depend on each other. It is recommended to clone Thrust
+and build CUB as a component of Thrust.
+
 CUB uses the [CMake build system](https://cmake.org/) to build unit tests,
 examples, and header tests. To build CUB as a developer, the following
 recipe should be followed:
 
 ```
-# Clone CUB repo from github:
-git clone https://github.com/NVIDIA/cub.git
-cd cub
+# Clone Thrust and CUB from Github. CUB is located in Thrust's
+# `dependencies/cub` submodule.
+git clone --recursive https://github.com/NVIDIA/thrust.git
+cd thrust
 
 # Create build directory:
 mkdir build
 cd build
 
 # Configure -- use one of the following:
-cmake ..   # Command line interface.
-ccmake ..  # ncurses GUI (Linux only)
-cmake-gui  # Graphical UI, set source/build directories in the app
+cmake -DTHRUST_INCLUDE_CUB_CMAKE=ON ..   # Command line interface.
+ccmake -DTHRUST_INCLUDE_CUB_CMAKE=ON ..  # ncurses GUI (Linux only)
+cmake-gui  # Graphical UI, set source/build directories and options in the app
 
 # Build:
 cmake --build . -j <num jobs>   # invokes make (or ninja, etc)

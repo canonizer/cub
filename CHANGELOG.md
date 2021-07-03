@@ -1,8 +1,136 @@
-# CUB 1.11.0
+# CUB 1.13.0 (NVIDIA HPC SDK 21.7)
+
+CUB 1.13.0 is the major release accompanying the NVIDIA HPC SDK 21.7 release.
+
+Notable new features include support for striped data arrangements in block
+load/store utilities, `bfloat16` radix sort support, and fewer restrictions on
+offset iterators in segmented device algorithms. Several bugs
+in `cub::BlockShuffle`, `cub::BlockDiscontinuity`, and `cub::DeviceHistogram`
+have been addressed. The amount of code generated in `cub::DeviceScan` has been
+greatly reduced, leading to significant compile-time improvements when targeting
+multiple PTX architectures.
+
+This release also includes several user-contributed documentation fixes that
+will be reflected in CUB's online documentation in the coming weeks.
+
+## Breaking Changes
+
+- NVIDIA/cub#320: Deprecated `cub::TexRefInputIterator<T, UNIQUE_ID>`. Use
+  `cub::TexObjInputIterator<T>` as a replacement.
+
+## New Features
+
+- NVIDIA/cub#274: Add `BLOCK_LOAD_STRIPED` and `BLOCK_STORE_STRIPED`
+  functionality to `cub::BlockLoadAlgorithm` and `cub::BlockStoreAlgorithm`.
+  Thanks to Matthew Nicely (@mnicely) for this contribution.
+- NVIDIA/cub#291: `cub::DeviceSegmentedRadixSort` and
+  `cub::DeviceSegmentedReduce` now support different types for begin/end
+  offset iterators. Thanks to Sergey Pavlov (@psvvsp) for this contribution.
+- NVIDIA/cub#306: Add `bfloat16` support to `cub::DeviceRadixSort`. Thanks to
+  Xiang Gao (@zasdfgbnm) for this contribution.
+- NVIDIA/cub#320: Introduce a new `CUB_IGNORE_DEPRECATED_API` macro that
+  disables deprecation warnings on Thrust and CUB APIs.
+
+## Bug Fixes
+
+- NVIDIA/cub#277: Fixed sanitizer warnings in `RadixSortScanBinsKernels`. Thanks
+  to Andy Adinets (@canonizer) for this contribution.
+- NVIDIA/cub#287: `cub::DeviceHistogram` now correctly handles cases
+  where `OffsetT` is not an `int`. Thanks to Dominique LaSalle (@nv-dlasalle)
+  for this contribution.
+- NVIDIA/cub#311: Fixed several bugs and added tests for the `cub::BlockShuffle`
+  collective operations.
+- NVIDIA/cub#312: Eliminate unnecessary kernel instantiations when
+  compiling `cub::DeviceScan`. Thanks to Elias Stehle (@elstehle) for this
+  contribution.
+- NVIDIA/cub#319: Fixed out-of-bounds memory access on debugging builds
+  of `cub::BlockDiscontinuity::FlagHeadsAndTails`.
+- NVIDIA/cub#320: Fixed harmless missing return statement warning in
+  unreachable `cub::TexObjInputIterator` code path.
+
+## Other Enhancements
+
+- Several documentation fixes are included in this release.
+    - NVIDIA/cub#275: Fixed comments describing the `cub::If` and `cub::Equals`
+      utilities. Thanks to Rukshan Jayasekara (@rukshan99) for this
+      contribution.
+    - NVIDIA/cub#290: Documented that `cub::DeviceSegmentedReduce` will produce
+      consistent results run-to-run on the same device for pseudo-associated
+      reduction operators. Thanks to Himanshu (@himanshu007-creator) for this
+      contribution.
+    - NVIDIA/cub#298: `CONTRIBUTING.md` now refers to Thrust's build
+      instructions for developer builds, which is the preferred way to build the
+      CUB test harness. Thanks to Xiang Gao (@zasdfgbnm) for contributing.
+    - NVIDIA/cub#301: Expand `cub::DeviceScan` documentation to include in-place
+      support and add tests. Thanks to Xiang Gao (@zasdfgbnm) for this
+      contribution.
+    - NVIDIA/cub#307: Expand `cub::DeviceRadixSort` and `cub::BlockRadixSort`
+      documentation to clarify stability, in-place support, and type-specific
+      bitwise transformations. Thanks to Himanshu (@himanshu007-creator) for
+      contributing.
+    - NVIDIA/cub#316: Move `WARP_TIME_SLICING` documentation to the correct
+      location. Thanks to Peter Han (@peter9606) for this contribution.
+    - NVIDIA/cub#321: Update URLs from deprecated github.com to preferred
+      github.io. Thanks to Lilo Huang (@lilohuang) for this contribution.
+
+# CUB 1.12.1 (CUDA Toolkit 11.4)
+
+CUB 1.12.1 is a trivial patch release that slightly changes the phrasing of
+a deprecation message.
+
+# CUB 1.12.0 (NVIDIA HPC SDK 21.3)
 
 ## Summary
 
-CUB 1.11.0 is a major release providing bugfixes and performance enhancements.
+CUB 1.12.0 is a bugfix release accompanying the NVIDIA HPC SDK 21.3 and
+the CUDA Toolkit 11.4.
+
+Radix sort is now stable when both +0.0 and -0.0 are present in the input (they
+are treated as equivalent).
+Many compilation warnings and subtle overflow bugs were fixed in the device
+algorithms, including a long-standing bug that returned invalid temporary
+storage requirements when `num_items` was close to (but not
+exceeding) `INT32_MAX`.
+Support for Clang < 7.0 and MSVC < 2019 (aka 19.20/16.0/14.20) is now
+deprecated.
+
+## Breaking Changes
+
+- NVIDIA/cub#256: Deprecate Clang < 7 and MSVC < 2019.
+
+## New Features
+
+- NVIDIA/cub#218: Radix sort now treats -0.0 and +0.0 as equivalent for floating
+  point types, which is required for the sort to be stable. Thanks to Andy
+  Adinets for this contribution.
+
+## Bug Fixes
+
+- NVIDIA/cub#247: Suppress newly triggered warnings in Clang. Thanks to Andrew
+  Corrigan for this contribution.
+- NVIDIA/cub#249: Enable stricter warning flags. This fixes a number of
+  outstanding issues:
+  - NVIDIA/cub#221: Overflow in `temp_storage_bytes` when `num_items` close to
+    (but not over) `INT32_MAX`.
+  - NVIDIA/cub#228: CUB uses non-standard C++ extensions that break strict
+    compilers.
+  - NVIDIA/cub#257: Warning when compiling `GridEvenShare` with unsigned
+    offsets.
+- NVIDIA/cub#258: Use correct `OffsetT` in `DispatchRadixSort::InitPassConfig`.
+  Thanks to Felix Kallenborn for this contribution.
+- NVIDIA/cub#259: Remove some problematic `__forceinline__` annotations.
+
+## Other Enhancements
+
+- NVIDIA/cub#123: Fix incorrect issue number in changelog. Thanks to Peet
+  Whittaker for this contribution.
+
+# CUB 1.11.0 (CUDA Toolkit 11.3)
+
+## Summary
+
+CUB 1.11.0 is a major release accompanying the CUDA Toolkit 11.3 release,
+providing bugfixes and performance enhancements.
 
 It includes a new `DeviceRadixSort` backend that improves performance by up to
 2x on supported keys and hardware.

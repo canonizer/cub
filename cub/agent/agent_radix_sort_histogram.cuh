@@ -217,9 +217,9 @@ struct AgentRadixSortHistogram
                     // Using cuda::atomic<> here would also require using it in
                     // other kernels. However, other kernels of onesweep sorting
                     // (ExclusiveSum, Onesweep) don't need atomic
-                    // access. Therefore, atomicAdd() is used, until
+                    // access. Therefore, AtomicAdd() is used, until
                     // cuda::atomic_ref<> becomes available.
-                    atomicAdd(&d_bins_out[pass * RADIX_DIGITS + bin], count);
+                    AtomicAdd(&d_bins_out[pass * RADIX_DIGITS + bin], count);
                 }
             }
         }

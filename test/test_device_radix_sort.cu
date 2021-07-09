@@ -1136,7 +1136,7 @@ void TestDirection(
     int                  begin_bit,
     int                  end_bit)
 {
-    // TestValueTypes<true>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
+    TestValueTypes<true>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
     TestValueTypes<false>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
 }
 
@@ -1255,10 +1255,10 @@ void TestSegments(
     }
 #else
     // Test single segment
-    //if (num_items < 128 * 1000) {
+    if (num_items < 128 * 1000 || pre_sorted) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         TestSegmentIterators(h_keys, num_items, 1, pre_sorted, h_segment_offsets, d_segment_offsets);
-    //}
+    }
 #endif
 
     if (h_segment_offsets) delete[] h_segment_offsets;
@@ -1305,28 +1305,28 @@ void TestGen(
 
     KeyT *h_keys = new KeyT[max_items];
 
-    // for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
-    // {
-    //     printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
-    //     InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
-    //     TestSizes(h_keys, max_items, max_segments, false);
-    // }
+    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
+    {
+        printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
+        InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
+        TestSizes(h_keys, max_items, max_segments, false);
+    }
 
-    // if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
-    // {
-    //     printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
-    //     fflush(stdout);
-    //     InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
-    //     TestSizes(h_keys, max_items, max_segments, false);
-    // }
+    if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
+    {
+        printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
+        fflush(stdout);
+        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
+        TestSizes(h_keys, max_items, max_segments, false);
+    }
 
-    // printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    // InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
-    // TestSizes(h_keys, max_items, max_segments, false);
+    printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
+    TestSizes(h_keys, max_items, max_segments, false);
 
-    // printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    // InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
-    // TestSizes(h_keys, max_items, max_segments, false);
+    printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
+    TestSizes(h_keys, max_items, max_segments, false);
 
     if (cub::Traits<KeyT>::CATEGORY != cub::FLOATING_POINT)
     {

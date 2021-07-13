@@ -869,7 +869,7 @@ template <
 void Test(
     KeyT                 *h_keys,
     ValueT               *h_values,
-    int                  num_items,
+    size_t               num_items,
     int                  num_segments,
     BeginOffsetIteratorT d_segment_begin_offsets,
     EndOffsetIteratorT   d_segment_end_offsets,
@@ -883,7 +883,7 @@ void Test(
 
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
-    printf("%s %s cub::DeviceRadixSort %d items, %d segments, %d-byte keys (%s) %d-byte values (%s), descending %d, begin_bit %d, end_bit %d\n",
+    printf("%s %s cub::DeviceRadixSort %zd items, %d segments, %d-byte keys (%s) %d-byte values (%s), descending %d, begin_bit %d, end_bit %d\n",
         (BACKEND == CUB_NO_OVERWRITE) ? "CUB_NO_OVERWRITE" : (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (KEYS_ONLY) ? "keys-only" : "key-value",
         num_items, num_segments,
@@ -1104,14 +1104,23 @@ void TestValueTypes(
     // Test with 8b value
     TestBackend<IS_DESCENDING, KeyT, unsigned char>     (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    // Test with 32b value
-    TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    if (!pre_sorted || sizeof(KeyT) <= 4)
+    {
+        // Test with 32b value
+        TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    }
 
-    // Test with 64b value
-    TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    if (!pre_sorted || sizeof(KeyT) <= 2)
+    {
+        // Test with 64b value
+        TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    }
 
-    // Test with non-trivially-constructable value
-    TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    if (!pre_sorted)
+    {
+        // Test with non-trivially-constructable value
+        TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    }
 
     // Cleanup
     ResetKeys<IS_DESCENDING>(h_keys, num_items, pre_sorted, h_reference_keys);
@@ -1212,6 +1221,7 @@ void TestSegmentIterators(
     // Test with segment pointer
     TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_offsets, d_segment_offsets + 1);
 
+#ifdef SEGMENTED_SORT
     // Test with segment iterator
     typedef CastOp<size_t> IdentityOpT;
     IdentityOpT identity_op;
@@ -1227,6 +1237,7 @@ void TestSegmentIterators(
     TransformInputIterator<size_t, TransformFunctor2T, size_t*, size_t> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
 
     TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
+#endif
 }
 
 
@@ -1236,7 +1247,7 @@ void TestSegmentIterators(
 template <typename KeyT>
 void TestSegments(
     KeyT    *h_keys,
-    int     num_items,
+    size_t  num_items,
     int     max_segments,
     bool    pre_sorted)
 {

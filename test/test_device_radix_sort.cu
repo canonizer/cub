@@ -645,27 +645,37 @@ void InitializeKeysSorted(
     using TraitsT = cub::Traits<KeyT>;
     using UnsignedBits = typename TraitsT::UnsignedBits;
 
-    // Start with minimum element.
-    UnsignedBits key_bits = 0;
+    // Numbers to generate random runs.
+    UnsignedBits max_inc = 1 << (sizeof(UnsignedBits) < 4 ? 3 :
+                                 (sizeof(UnsignedBits) < 8 ? 14 : 24));
+    UnsignedBits max_bits = ~0;
+    size_t max_run = std::max(num_items / (max_bits / max_inc), size_t(1 << 14));
+
+    UnsignedBits *h_key_bits = (UnsignedBits *)h_keys;
     size_t i = 0;
-    // While not the whole array is initialized.
+    // Start with the minimum twiddled key.
+    UnsignedBits twiddled_key = 0;
     while (i < num_items)
     {
         // Generate random increment (avoid overflow).
-        // TODO: pick up the increment at random.
-        key_bits += 1;
+        UnsignedBits inc_bits = 0;
+        RandomBits(inc_bits);
+        // twiddled_key < bits_max at this point.
+        UnsignedBits inc = std::min(1 + inc_bits % max_inc, max_bits - twiddled_key);
+        twiddled_key += inc;
         
-        // Generate random run length
-        // (ensure there are enough values to fill the rest).
-        // TODO: pick up the run length at random.
-        size_t run_length = 10001;
-        size_t run_end = std::min(i + run_length, num_items);
+        // Generate random run length (ensure there are enough values to fill the rest).
+        size_t run_bits = 0;
+        RandomBits(run_bits);
+        size_t run_length = std::min(1 + run_bits % max_run, num_items - i);
+        if (twiddled_key == max_bits) run_length = num_items - i;
+        size_t run_end = i + run_length;
         
         // Fill the array.
-        KeyT key = TraitsT::TwiddleOut(key_bits);
+        UnsignedBits key = TraitsT::TwiddleOut(twiddled_key);
         for (; i < run_end; ++i)
         {
-            h_keys[i] = key;
+            h_key_bits[i] = key;
         }
     }
 }
@@ -1316,28 +1326,28 @@ void TestGen(
 
     KeyT *h_keys = new KeyT[max_items];
 
-    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
-    {
-        printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
-        InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
-        TestSizes(h_keys, max_items, max_segments, false);
-    }
+    // for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
+    // {
+    //     printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
+    //     InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
+    //     TestSizes(h_keys, max_items, max_segments, false);
+    // }
 
-    if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
-    {
-        printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
-        fflush(stdout);
-        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
-        TestSizes(h_keys, max_items, max_segments, false);
-    }
+    // if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
+    // {
+    //     printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
+    //     fflush(stdout);
+    //     InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
+    //     TestSizes(h_keys, max_items, max_segments, false);
+    // }
 
-    printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
-    TestSizes(h_keys, max_items, max_segments, false);
+    // printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    // InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
+    // TestSizes(h_keys, max_items, max_segments, false);
 
-    printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
-    TestSizes(h_keys, max_items, max_segments, false);
+    // printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    // InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
+    // TestSizes(h_keys, max_items, max_segments, false);
 
     if (cub::Traits<KeyT>::CATEGORY != cub::FLOATING_POINT)
     {

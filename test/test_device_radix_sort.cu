@@ -649,7 +649,7 @@ void InitializeKeysSorted(
     UnsignedBits max_inc = 1 << (sizeof(UnsignedBits) < 4 ? 3 :
                                  (sizeof(UnsignedBits) < 8 ? 14 : 24));
     UnsignedBits max_bits = ~0;
-    size_t max_run = std::max(num_items / (max_bits / max_inc), size_t(1 << 14));
+    size_t max_run = std::max(num_items / size_t(max_bits / max_inc), size_t(1 << 14));
 
     UnsignedBits *h_key_bits = (UnsignedBits *)h_keys;
     size_t i = 0;
@@ -1316,8 +1316,6 @@ void TestGen(
     size_t             max_items,
     int             max_segments)
 {
-    // if (max_items == ~size_t(0))
-    //     max_items = 1000000003;
     if (max_items == ~size_t(0))
         max_items = 200000003;
 
@@ -1326,38 +1324,38 @@ void TestGen(
 
     KeyT *h_keys = new KeyT[max_items];
 
-    // for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
-    // {
-    //     printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
-    //     InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
-    //     TestSizes(h_keys, max_items, max_segments, false);
-    // }
-
-    // if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
-    // {
-    //     printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
-    //     fflush(stdout);
-    //     InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
-    //     TestSizes(h_keys, max_items, max_segments, false);
-    // }
-
-    // printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    // InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
-    // TestSizes(h_keys, max_items, max_segments, false);
-
-    // printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    // InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
-    // TestSizes(h_keys, max_items, max_segments, false);
-
-    if (cub::Traits<KeyT>::CATEGORY != cub::FLOATING_POINT)
+    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
     {
-        //printf("\nTesting pre-sorted and randomly permuted %s keys\n", typeid(KeyT).name());
+        printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
+        InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
+        TestSizes(h_keys, max_items, max_segments, false);
+    }
+
+    if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
+    {
+        printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
+        fflush(stdout);
+        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
+        TestSizes(h_keys, max_items, max_segments, false);
+    }
+
+    printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
+    TestSizes(h_keys, max_items, max_segments, false);
+
+    printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
+    InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
+    TestSizes(h_keys, max_items, max_segments, false);
+
+    if (cub::Traits<KeyT>::CATEGORY != cub::FLOATING_POINT && !cub::Equals<KeyT, bool>::VALUE)
+    {
+        printf("\nTesting pre-sorted and randomly permuted %s keys\n", typeid(KeyT).name());
         fflush(stdout);
         InitializeKeysSorted(h_keys, max_items);
-        printf("Initialized sorted keys\n");
+        //printf("Initialized sorted keys\n");
         fflush(stdout);
         TestSizes(h_keys, max_items, max_segments, true);
-        printf("Tested sizes\n");
+        //printf("Tested sizes\n");
         fflush(stdout);
     }
 
@@ -1547,37 +1545,37 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        // TestGen<bool>                 (num_items, num_segments);
+        TestGen<bool>                 (num_items, num_segments);
 
-        // TestGen<char>                 (num_items, num_segments);
-        // TestGen<signed char>          (num_items, num_segments);
-        // TestGen<unsigned char>        (num_items, num_segments);
+        TestGen<char>                 (num_items, num_segments);
+        TestGen<signed char>          (num_items, num_segments);
+        TestGen<unsigned char>        (num_items, num_segments);
 
-        // TestGen<short>                (num_items, num_segments);
-        // TestGen<unsigned short>       (num_items, num_segments);
+        TestGen<short>                (num_items, num_segments);
+        TestGen<unsigned short>       (num_items, num_segments);
 
-        // TestGen<int>                  (num_items, num_segments);
+        TestGen<int>                  (num_items, num_segments);
         TestGen<unsigned int>         (num_items, num_segments);
 
-//         TestGen<long>                 (num_items, num_segments);
-//         TestGen<unsigned long>        (num_items, num_segments);
+        TestGen<long>                 (num_items, num_segments);
+        TestGen<unsigned long>        (num_items, num_segments);
 
-//         TestGen<long long>            (num_items, num_segments);
-//         TestGen<unsigned long long>   (num_items, num_segments);
+        TestGen<long long>            (num_items, num_segments);
+        TestGen<unsigned long long>   (num_items, num_segments);
 
-// #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
-//         TestGen<half_t>               (num_items, num_segments);
-// #endif
-// #if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
-// #if !defined(__ICC)
-//         // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
-//         TestGen<bfloat16_t>           (num_items, num_segments);
-// #endif
-// #endif
-//         TestGen<float>                (num_items, num_segments);
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+        TestGen<half_t>               (num_items, num_segments);
+#endif
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+#if !defined(__ICC)
+        // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
+        TestGen<bfloat16_t>           (num_items, num_segments);
+#endif
+#endif
+        TestGen<float>                (num_items, num_segments);
 
-//         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-//             TestGen<double>           (num_items, num_segments);
+        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
+            TestGen<double>           (num_items, num_segments);
 
     }
 
